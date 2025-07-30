@@ -1,0 +1,9 @@
+{
+  "userId": 1,
+  "items": [
+    { "id": 1, "qty": 2, "price": 10.99 }
+  ],
+  "address": "123 Main St",
+  "paymentMethod": "credit_card",
+  "deliveryMethod": "standard"
+}

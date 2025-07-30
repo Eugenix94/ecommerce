@@ -1,0 +1,307 @@
+
+body {
+  background: #f6f8fa;
+  color: #222;
+  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+  margin: 0;
+  min-height: 100vh;
+  width: 100vw;
+  box-sizing: border-box;
+}
+
+
+.container {
+  width: 100vw;
+  min-height: 100vh;
+  margin: 0;
+  background: #fff;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+@media (min-width: 900px) {
+  .container {
+    max-width: 900px;
+    margin: 2rem auto;
+    border-radius: 12px;
+    box-shadow: 0 2px 16px #0001;
+    padding: 2rem 2.5rem 2.5rem 2.5rem;
+    background: #fff;
+  }
+}
+
+@media (max-width: 600px) {
+  .container {
+    padding: 0.5rem;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .products-table th, .products-table td {
+    padding: 0.5em 0.3em;
+    font-size: 0.95em;
+  }
+  .register-section, .login-section {
+    padding: 1rem 0.5rem;
+    max-width: 100%;
+  }
+}
+
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #2e7d32;
+  color: #fff;
+  padding: 0.7em 1.5em;
+  border-radius: 12px 12px 0 0;
+  margin-bottom: 1em;
+}
+.logo {
+  font-size: 1.5em;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.7em;
+}
+.user-icon {
+  font-size: 1.3em;
+}
+.logout-btn {
+  background: #c62828;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.4em 1em;
+  font-size: 1em;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.logout-btn:hover {
+  background: #b71c1c;
+}
+
+.nav-bar {
+  display: flex;
+  gap: 1em;
+  justify-content: center;
+  margin-bottom: 1.5em;
+}
+.nav-bar button {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5em 1.2em;
+  font-size: 1em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.nav-bar button:hover {
+  background: #c8e6c9;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+h1 {
+  font-size: 2.5rem;
+  margin-bottom: 0.2em;
+  color: #2e7d32;
+}
+.subtitle {
+  color: #555;
+  font-size: 1.1rem;
+  margin-bottom: 0.5em;
+}
+
+.products-section {
+  margin-bottom: 2.5rem;
+}
+
+.products-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  background: #fafbfc;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px #0001;
+  font-size: 1.05em;
+}
+.products-table th, .products-table td {
+  padding: 0.75em 1em;
+  border-bottom: 1px solid #e0e0e0;
+  text-align: left;
+}
+.products-table th {
+  background: #e8f5e9;
+  color: #2e7d32;
+  font-weight: 600;
+}
+.products-table tr:last-child td {
+  border-bottom: none;
+}
+.product-img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+.register-section {
+  margin-top: 2rem;
+  background: #f1f8e9;
+  padding: 1.5rem 2rem;
+  border-radius: 10px;
+  box-shadow: 0 1px 4px #0001;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.account-settings {
+  margin-top: 2rem;
+  background: #fffde7;
+  padding: 1.5rem 2rem;
+  border-radius: 10px;
+  box-shadow: 0 1px 4px #0001;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.account-settings h2 {
+  color: #fbc02d;
+}
+.account-settings h3 {
+  color: #2e7d32;
+  margin-top: 1.2em;
+}
+.account-settings input {
+  margin-top: 0.3em;
+  padding: 0.5em 0.7em;
+  border: 1px solid #bdbdbd;
+  border-radius: 6px;
+  font-size: 1rem;
+  margin-bottom: 0.7em;
+}
+.account-settings button {
+  background: #fbc02d;
+  color: #222;
+  border: none;
+  border-radius: 6px;
+  padding: 0.7em 1.2em;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 0.5em;
+  transition: background 0.2s;
+}
+.account-settings button:hover {
+  background: #ffd54f;
+}
+.account-msg {
+  margin-top: 1em;
+  color: #fbc02d;
+  font-weight: 500;
+}
+.login-section {
+  margin-top: 2rem;
+  background: #e3f2fd;
+  padding: 1.5rem 2rem;
+  border-radius: 10px;
+  box-shadow: 0 1px 4px #0001;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.login-form label {
+  display: flex;
+  flex-direction: column;
+  font-weight: 500;
+  color: #1565c0;
+}
+.login-form input {
+  margin-top: 0.3em;
+  padding: 0.5em 0.7em;
+  border: 1px solid #bdbdbd;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+.login-form button {
+  background: #1565c0;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.7em 1.2em;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 0.5em;
+  transition: background 0.2s;
+}
+.login-form button:hover {
+  background: #1976d2;
+}
+.login-msg {
+  margin-top: 1em;
+  color: #1565c0;
+  font-weight: 500;
+}
+.register-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.register-form label {
+  display: flex;
+  flex-direction: column;
+  font-weight: 500;
+  color: #2e7d32;
+}
+.register-form input {
+  margin-top: 0.3em;
+  padding: 0.5em 0.7em;
+  border: 1px solid #bdbdbd;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+.register-form button {
+  background: #2e7d32;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.7em 1.2em;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 0.5em;
+  transition: background 0.2s;
+}
+.register-form button:hover {
+  background: #388e3c;
+}
+.reg-msg {
+  margin-top: 1em;
+  color: #c62828;
+  font-weight: 500;
+}
+.error {
+  color: #c62828;
+  font-weight: 500;
+}
+  color: #888;
+}
