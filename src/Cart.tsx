@@ -11,27 +11,41 @@ export default function Cart({ cart, onCheckout, onRemove, user }: CartProps) {
   const [msg, setMsg] = useState('');
   const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
 
-  const handleCheckout = async () => {
-    setMsg('');
+  const [showPayment, setShowPayment] = useState(false);
+  const [address, setAddress] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('credit_card');
+  const [deliveryMethod, setDeliveryMethod] = useState('standard');
+
+  const handleCheckoutClick = () => {
     if (!user) {
       setMsg('Please log in to checkout.');
       return;
     }
+    setShowPayment(true);
+  };
+
+  const handlePaymentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMsg('');
     try {
       const res = await fetch('http://localhost:3001/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: user.id,
+          userId: user?.id,
           items: cart,
-          address: 'Test Address',
-          paymentMethod: 'credit_card',
-          deliveryMethod: 'standard'
+          address,
+          paymentMethod,
+          deliveryMethod
         })
       });
       const data = await res.json();
       if (res.ok) {
         setMsg('Checkout successful!');
+        setShowPayment(false);
+        setAddress('');
+        setPaymentMethod('credit_card');
+        setDeliveryMethod('standard');
         onCheckout();
       } else {
         setMsg(data.error || 'Checkout failed.');
@@ -55,7 +69,33 @@ export default function Cart({ cart, onCheckout, onRemove, user }: CartProps) {
         </ul>
       )}
       <p><strong>Total:</strong> ${total.toFixed(2)}</p>
-      {cart.length > 0 && <button onClick={handleCheckout}>Checkout</button>}
+      {cart.length > 0 && !showPayment && <button onClick={handleCheckoutClick}>Checkout</button>}
+      {showPayment && (
+        <form onSubmit={handlePaymentSubmit} className="payment-form">
+          <h3>Payment & Delivery</h3>
+          <label>
+            Address:
+            <input type="text" value={address} onChange={e => setAddress(e.target.value)} required />
+          </label>
+          <label>
+            Payment Method:
+            <select value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}>
+              <option value="credit_card">Credit Card</option>
+              <option value="paypal">PayPal</option>
+              <option value="cash">Cash</option>
+            </select>
+          </label>
+          <label>
+            Delivery Method:
+            <select value={deliveryMethod} onChange={e => setDeliveryMethod(e.target.value)}>
+              <option value="standard">Standard</option>
+              <option value="express">Express</option>
+            </select>
+          </label>
+          <button type="submit">Confirm & Pay</button>
+          <button type="button" onClick={() => setShowPayment(false)}>Cancel</button>
+        </form>
+      )}
       {msg && <p className="cart-msg">{msg}</p>}
     </div>
   );

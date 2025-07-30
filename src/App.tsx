@@ -41,15 +41,20 @@ function TopBar({ user, onLogout, onAccount }: TopBarFullProps) {
 
 export default function App() {
   const [page, setPage] = useState<string>('products');
-  const [user, setUser] = useState<User>(null);
+  const [user, setUser] = useState<User>(() => {
+    const stored = localStorage.getItem('user');
+    return stored ? JSON.parse(stored) : null;
+  });
   const [cart, setCart] = useState<any[]>([]);
 
   const handleLogin = (userData: User) => {
     setUser(userData);
+    localStorage.setItem('user', JSON.stringify(userData));
     setPage('account');
   };
   const handleLogout = () => {
     setUser(null);
+    localStorage.removeItem('user');
     setPage('login');
     setCart([]);
   };

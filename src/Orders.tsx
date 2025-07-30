@@ -1,4 +1,7 @@
 import { useEffect, useState } from 'react';
+import ModifyOrderForm from './ModifyOrderForm';
+import Modal from './Modal';
+import OrderDetails from './OrderDetails';
 
 type User = {
   id: number;
@@ -18,6 +21,7 @@ type Order = {
   created_at: string;
   total: number;
   items: OrderItem[];
+  order_status?: string;
 };
 
 interface OrdersProps {
@@ -28,6 +32,9 @@ export default function Orders({ user }: OrdersProps) {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
+  const [detailsOrderId, setDetailsOrderId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -52,21 +59,37 @@ export default function Orders({ user }: OrdersProps) {
       <h2>Your Orders</h2>
       {orders.length === 0 ? <p>No orders found.</p> : (
         <ul>
-          {orders.map((order: Order) => (
+          {orders.map((order: any) => (
             <li key={order.id}>
-              <strong>Order #{order.id}</strong> - {new Date(order.created_at).toLocaleString()}<br />
-              <strong>Total:</strong> ${order.total}<br />
-              <ul>
-                {order.items.map((item: OrderItem) => (
-                  <li key={item.id}>
-                    {item.quantity} x Product #{item.product_id} @ ${item.price}
-                  </li>
-                ))}
-              </ul>
+              <button onClick={() => setDetailsOrderId(order.id)}>
+                View Details (Order #{order.id} - {new Date(order.created_at).toLocaleDateString()})
+              </button>
+              {detailsOrderId === order.id && (
+                <OrderDetails order={order} onModify={() => { setSelectedOrder(order); setModalOpen(true); }} />
+              )}
             </li>
           ))}
         </ul>
       )}
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)}>
+        {selectedOrder && (
+          <ModifyOrderForm order={selectedOrder} onModified={async () => {
+            setModalOpen(false);
+            setLoading(true);
+            const refreshed = await fetch(`http://localhost:3001/api/orders/${user.id}`);
+            const data = await refreshed.json();
+            setOrders(data);
+            setLoading(false);
+          }} onDeleted={async () => {
+            setModalOpen(false);
+            setLoading(true);
+            const refreshed = await fetch(`http://localhost:3001/api/orders/${user.id}`);
+            const data = await refreshed.json();
+            setOrders(data);
+            setLoading(false);
+          }} />
+        )}
+      </Modal>
     </div>
   );
 }

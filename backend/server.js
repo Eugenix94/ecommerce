@@ -277,6 +277,62 @@ app.get('/api/orders/:userId', async (req, res) => {
   }
 });
 
+// Refund request endpoint (user)
+app.post('/api/orders/:orderId/refund', async (req, res) => {
+  const { orderId } = req.params;
+  try {
+    const result = await pool.query('UPDATE orders SET refund_status = $1 WHERE id = $2 RETURNING *', ['requested', orderId]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Order not found.' });
+    }
+    res.json({ message: 'Refund requested.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Refund request failed.' });
+  }
+});
+
+// Modify order endpoint (user can update order if not shipped)
+app.put('/api/orders/:orderId', async (req, res) => {
+  const { orderId } = req.params;
+  const { items, address, paymentMethod, deliveryMethod } = req.body;
+  try {
+    // Check order status
+    const statusRes = await pool.query('SELECT order_status FROM orders WHERE id = $1', [orderId]);
+    if (statusRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Order not found.' });
+    }
+    if (statusRes.rows[0].order_status !== 'pending') {
+      return res.status(400).json({ error: 'Order cannot be modified after shipping.' });
+    }
+    // Update order details
+    await pool.query('UPDATE orders SET address = $1, payment_method = $2, delivery_method = $3 WHERE id = $4', [address, paymentMethod, deliveryMethod, orderId]);
+    if (Array.isArray(items)) {
+      await pool.query('DELETE FROM order_products WHERE order_id = $1', [orderId]);
+      for (const item of items) {
+        await pool.query('INSERT INTO order_products (order_id, product_id, quantity, price) VALUES ($1, $2, $3, $4)', [orderId, item.id, item.qty, item.price]);
+      }
+    }
+    res.json({ message: 'Order modified.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Order modification failed.' });
+  }
+});
+
+// Admin-only hard delete endpoint (for demonstration, no auth)
+app.delete('/api/admin/orders/:orderId', async (req, res) => {
+  const { orderId } = req.params;
+  try {
+    await pool.query('DELETE FROM order_products WHERE order_id = $1', [orderId]);
+    const result = await pool.query('DELETE FROM orders WHERE id = $1 RETURNING *', [orderId]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Order not found.' });
+    }
+    res.json({ message: 'Order permanently deleted.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Order deletion failed.' });
+  }
+});
+
 app.listen(port, () => {
   console.log(`Backend running at http://localhost:${port}`);
 });
