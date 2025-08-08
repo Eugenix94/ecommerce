@@ -28,15 +28,15 @@ export default function RegisterForm() {
     <form className="register-form" onSubmit={handleRegister}>
       <label>
         Username
-        <input name="username" value={form.username} onChange={handleChange} required />
+  <input name="username" placeholder="Choose a username" value={form.username} onChange={handleChange} required />
       </label>
       <label>
         Email
-        <input name="email" type="email" value={form.email} onChange={handleChange} required />
+  <input name="email" type="email" placeholder="Enter your email address" value={form.email} onChange={handleChange} required />
       </label>
       <label>
         Password
-        <input name="password" type="password" value={form.password} onChange={handleChange} required />
+  <input name="password" type="password" placeholder="Create a password" value={form.password} onChange={handleChange} required />
       </label>
       <button type="submit" disabled={loading}>{loading ? 'Registering...' : 'Register'}</button>
       {msg && <p className="register-msg">{msg}</p>}

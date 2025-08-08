@@ -95,8 +95,16 @@ export default function App() {
       <main>
         {page === 'products' && <ProductsList onAddToCart={handleAddToCart} user={user} />}
         {page === 'cart' && <Cart cart={cart} onCheckout={handleCheckout} onRemove={handleRemoveFromCart} user={user} />}
-        {page === 'login' && <LoginForm onLogin={handleLogin} />}
-        {page === 'register' && <RegisterForm />}
+        {page === 'login' && (
+          <div className="auth-card">
+            <LoginForm onLogin={handleLogin} />
+          </div>
+        )}
+        {page === 'register' && (
+          <div className="auth-card">
+            <RegisterForm />
+          </div>
+        )}
         {page === 'account' && user && (
           <div className="account-details">
             <h2>Account Details</h2>

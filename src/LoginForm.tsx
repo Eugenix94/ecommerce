@@ -35,11 +35,11 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
     <form className="login-form" onSubmit={handleLogin}>
       <label>
         Username
-        <input name="username" value={form.username} onChange={handleChange} required />
+  <input name="username" placeholder="Enter your username" value={form.username} onChange={handleChange} required />
       </label>
       <label>
         Password
-        <input name="password" type="password" value={form.password} onChange={handleChange} required />
+  <input name="password" type="password" placeholder="Enter your password" value={form.password} onChange={handleChange} required />
       </label>
       <button type="submit" disabled={loading}>{loading ? 'Logging in...' : 'Login'}</button>
       {msg && <p className="login-msg">{msg}</p>}

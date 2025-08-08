@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import bcrypt from 'bcryptjs';
 import { Pool } from 'pg';
+// ...existing code...
 
 const app = express();
 const port = 3001;
@@ -15,6 +16,8 @@ const pool = new Pool({
   password: 'dogfood', // update with your password
   port: 5432,
 });
+
+// ...existing code...
 
 async function setupDatabase() {
   await pool.query(`CREATE TABLE IF NOT EXISTS users (
