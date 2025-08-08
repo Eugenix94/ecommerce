@@ -20,6 +20,7 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
     const res = await fetch('http://localhost:3001/api/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify(form)
     });
     const data = await res.json();
@@ -42,6 +43,9 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
   <input name="password" type="password" placeholder="Enter your password" value={form.password} onChange={handleChange} required />
       </label>
       <button type="submit" disabled={loading}>{loading ? 'Logging in...' : 'Login'}</button>
+      <button type="button" className="google-login-btn" onClick={() => window.location.href = 'http://localhost:3001/api/auth/google'}>
+        Login with Google
+      </button>
       {msg && <p className="login-msg">{msg}</p>}
     </form>
   );

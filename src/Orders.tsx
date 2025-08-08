@@ -9,20 +9,7 @@ type User = {
   email: string;
 };
 
-type OrderItem = {
-  id: number;
-  product_id: number;
-  quantity: number;
-  price: number;
-};
 
-type Order = {
-  id: number;
-  created_at: string;
-  total: number;
-  items: OrderItem[];
-  order_status?: string;
-};
 
 interface OrdersProps {
   user: User;
@@ -38,7 +25,7 @@ export default function Orders({ user }: OrdersProps) {
 
   useEffect(() => {
     if (!user) return;
-    fetch(`http://localhost:3001/api/orders/${user.id}`)
+  fetch(`http://localhost:3001/api/orders/${user.id}`, { credentials: 'include' })
       .then(res => res.json())
       .then(data => {
         setOrders(data);
@@ -76,14 +63,14 @@ export default function Orders({ user }: OrdersProps) {
           <ModifyOrderForm order={selectedOrder} onModified={async () => {
             setModalOpen(false);
             setLoading(true);
-            const refreshed = await fetch(`http://localhost:3001/api/orders/${user.id}`);
+            const refreshed = await fetch(`http://localhost:3001/api/orders/${user.id}`, { credentials: 'include' });
             const data = await refreshed.json();
             setOrders(data);
             setLoading(false);
           }} onDeleted={async () => {
             setModalOpen(false);
             setLoading(true);
-            const refreshed = await fetch(`http://localhost:3001/api/orders/${user.id}`);
+            const refreshed = await fetch(`http://localhost:3001/api/orders/${user.id}`, { credentials: 'include' });
             const data = await refreshed.json();
             setOrders(data);
             setLoading(false);

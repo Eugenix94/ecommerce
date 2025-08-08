@@ -11,7 +11,7 @@ export default function ProductsList({ onAddToCart, user }: ProductsListProps) {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    fetch('http://localhost:3001/api/products')
+  fetch('http://localhost:3001/api/products', { credentials: 'include' })
       .then(res => res.json())
       .then(data => {
         setProducts(data);

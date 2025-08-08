@@ -1,29 +1,80 @@
+/// <reference path="./types.d.ts" />
 import express from 'express';
 import cors from 'cors';
 import bcrypt from 'bcryptjs';
 import { Pool } from 'pg';
+import passport from 'passport';
+import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
+import session from 'express-session';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const pool = new Pool({
-  user: 'postgres',
-  database: 'ecommerce',
-  password: 'dogfood',
-  port: 5432
+  user: process.env.PGUSER || 'postgres',
+  database: process.env.PGDATABASE || 'ecommerce',
+  password: process.env.PGPASSWORD || 'dogfood',
+  port: Number(process.env.PGPORT || 5432)
 });
 
 const app = express();
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: process.env.FRONTEND_ORIGIN || 'http://localhost:5173',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
 }));
 app.use(express.json());
+
+// Passport session setup
+passport.serializeUser((user: any, done: (err: any, id?: any) => void) => done(null, user.id));
+passport.deserializeUser(async (id: number, done: (err: any, user?: any) => void) => {
+  try {
+    const userRes = await pool.query('SELECT * FROM users WHERE id = $1', [id]);
+    done(null, userRes.rows[0]);
+  } catch (err) {
+    done(err);
+  }
+});
+
+passport.use(new GoogleStrategy({
+  clientID: process.env.GOOGLE_CLIENT_ID || 'GOOGLE_CLIENT_ID',
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET || 'GOOGLE_CLIENT_SECRET',
+  callbackURL: process.env.GOOGLE_CALLBACK_URL || 'http://localhost:3001/api/auth/google/callback',
+}, async (accessToken: string, refreshToken: string, profile: any, done: (err: any, user?: any) => void) => {
+  try {
+    const googleId = profile.id;
+    const email = profile.emails?.[0]?.value || '';
+    const username = profile.displayName || email;
+    let userRes = await pool.query('SELECT * FROM users WHERE google_id = $1', [googleId]);
+    let user = userRes.rows[0];
+    if (!user) {
+      userRes = await pool.query('INSERT INTO users (username, email, google_id, provider) VALUES ($1, $2, $3, $4) RETURNING *', [username, email, googleId, 'google']);
+      user = userRes.rows[0];
+    }
+    done(null, user);
+  } catch (err) {
+    done(err);
+  }
+}));
+
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'dev_secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    sameSite: 'lax'
+  }
+}));
+app.use(passport.initialize());
+app.use(passport.session());
 
 async function setupDatabase() {
   await pool.query(`CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     username TEXT UNIQUE NOT NULL,
     email TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL
+  password TEXT NOT NULL
   );`);
   await pool.query(`CREATE TABLE IF NOT EXISTS products (
     id SERIAL PRIMARY KEY,
@@ -54,6 +105,13 @@ async function setupDatabase() {
     price REAL NOT NULL,
     deleted BOOLEAN DEFAULT FALSE
   );`);
+
+  // Add Google fields to users table
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id TEXT;
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS provider TEXT DEFAULT 'local';`);
+
+  // Allow NULL password for OAuth users
+  await pool.query(`ALTER TABLE users ALTER COLUMN password DROP NOT NULL;`);
 }
 
 setupDatabase().catch((err) => {
@@ -279,7 +337,34 @@ app.get('/api/orders/:userId', async (req, res) => {
   }
 });
 
-const port = 3001;
+// Google OAuth routes
+app.get('/api/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+app.get('/api/auth/google/callback', passport.authenticate('google', { failureRedirect: '/login', session: true }), (req, res) => {
+  // Redirect to frontend with user info
+  res.redirect('http://localhost:5173/?googleLogin=success');
+});
+
+app.get('/api/auth/user', (req, res) => {
+  if (req.isAuthenticated && req.isAuthenticated()) {
+    const u: any = req.user;
+    res.json({ user: { id: u.id, username: u.username, email: u.email } });
+  } else {
+    res.status(401).json({ error: 'Not authenticated' });
+  }
+});
+
+app.post('/api/auth/logout', (req, res) => {
+  // @ts-ignore - passport adds logout to req
+  req.logout?.((err: any) => {
+    if (err) return res.status(500).json({ error: 'Logout failed' });
+    req.session?.destroy(() => {
+      res.clearCookie('connect.sid');
+      res.json({ message: 'Logged out' });
+    });
+  });
+});
+
+const port = Number(process.env.PORT || 3001);
 app.listen(port, () => {
   console.log('Backend running at http://localhost:' + port);
 });

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 type User = {
   id: number;
@@ -47,16 +47,42 @@ export default function App() {
   });
   const [cart, setCart] = useState<any[]>([]);
 
+  // On first load, if redirected from Google OAuth, try to fetch the authenticated user
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('googleLogin') === 'success' && !user) {
+      fetch('http://localhost:3001/api/auth/user', { credentials: 'include' })
+        .then(res => res.ok ? res.json() : Promise.reject())
+        .then(data => {
+          if (data.user) {
+            setUser(data.user);
+            localStorage.setItem('user', JSON.stringify(data.user));
+            setPage('account');
+          }
+        })
+        .finally(() => {
+          // Clean query string
+          const url = new URL(window.location.href);
+          url.searchParams.delete('googleLogin');
+          window.history.replaceState({}, '', url.toString());
+        });
+    }
+  }, []);
+
   const handleLogin = (userData: User) => {
     setUser(userData);
     localStorage.setItem('user', JSON.stringify(userData));
     setPage('account');
   };
   const handleLogout = () => {
-    setUser(null);
-    localStorage.removeItem('user');
-    setPage('login');
-    setCart([]);
+    // Call backend to clear session (for OAuth users)
+    fetch('http://localhost:3001/api/auth/logout', { method: 'POST', credentials: 'include' })
+      .finally(() => {
+        setUser(null);
+        localStorage.removeItem('user');
+        setPage('login');
+        setCart([]);
+      });
   };
   const handleAddToCart = (product: any) => {
     setCart(prev => {

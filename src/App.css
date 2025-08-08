@@ -39,6 +39,23 @@ main { display:grid; grid-template-columns: 1fr; gap: 20px; }
 .login-form button { background:#1565c0; }
 .register-form button { background:#2e7d32; }
 
+/* Google login button */
+.google-login-btn {
+  background: #fff;
+  color: #4285f4;
+  border: 1px solid #4285f4;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-weight: 600;
+  margin-top: 8px;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.google-login-btn:hover {
+  background: #4285f4;
+  color: #fff;
+}
+
 /* Products table */
 .products-table { width:100%; border-collapse:collapse; background:#fff; border-radius:10px; overflow:hidden; }
 .products-table th, .products-table td { padding:12px; border-bottom:1px solid #eee; }

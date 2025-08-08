@@ -31,6 +31,7 @@ export default function Cart({ cart, onCheckout, onRemove, user }: CartProps) {
       const res = await fetch('http://localhost:3001/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           userId: user?.id,
           items: cart,
