@@ -6,9 +6,26 @@ import { Pool } from 'pg';
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import session from 'express-session';
-import dotenv from 'dotenv';
-
 dotenv.config();
+import dotenv from 'dotenv';
+dotenv.config();
+
+// Validate required environment variables for Render
+const requiredEnv = [
+  'PORT',
+  'PGUSER',
+  'PGDATABASE',
+  'PGPASSWORD',
+  'GOOGLE_CLIENT_ID',
+  'GOOGLE_CLIENT_SECRET',
+  'GOOGLE_CALLBACK_URL',
+  'SESSION_SECRET'
+];
+for (const key of requiredEnv) {
+  if (!process.env[key]) {
+    throw new Error(`Missing required environment variable: ${key}`);
+  }
+}
 
 const pool = new Pool({
   user: process.env.PGUSER || 'postgres',
@@ -19,10 +36,15 @@ const pool = new Pool({
 
 const app = express();
 app.use(cors({
-  origin: process.env.FRONTEND_ORIGIN || 'http://localhost:5173',
+  origin: process.env.FRONTEND_ORIGIN || '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
 }));
+// Serve static files (SVG images) in production
+import path from 'path';
+app.use('/images', express.static(path.join(process.cwd(), '../public/images')));
+// Health check endpoint for Render
+app.get('/healthz', (_req, res) => res.send('ok'));
 app.use(express.json());
 app.use(session({
   secret: process.env.SESSION_SECRET || 'dev_secret',
@@ -315,7 +337,8 @@ app.post('/api/auth/logout', (req, res) => {
   try {
     await setupDatabase();
     await seedProducts();
-    const port = Number(process.env.PORT || 3001);
+    const port = Number(process.env.PORT);
+    if (!port) throw new Error('PORT env variable must be set (Render requirement)');
     app.listen(port, () => {
       console.log('Backend running at http://localhost:' + port);
     });
