@@ -1,0 +1,11 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='300' height='200'>
+<rect width='300' height='200' fill='#6d4c41'/>
+<g fill='none' stroke='#fff' stroke-width='6'>
+<rect x='60' y='90' width='180' height='50' rx='6'/>
+<line x1='60' y1='140' x2='60' y2='165'/>
+<line x1='240' y1='140' x2='240' y2='165'/>
+<line x1='120' y1='90' x2='120' y2='70'/>
+<line x1='180' y1='90' x2='180' y2='70'/>
+</g>
+<text x='50%' y='40' font-size='30' font-family='Arial,Helvetica,sans-serif' fill='#fff' dominant-baseline='middle' text-anchor='middle'>Furniture</text>
+</svg>

@@ -1,0 +1,5 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='300' height='200'>
+<rect width='300' height='200' fill='#8e24aa'/>
+<path d='M40 140 Q70 90 120 110 T200 110 Q230 108 250 130 L250 150 Q230 165 40 165Z' fill='#fff' stroke='#fff' stroke-width='3'/>
+<text x='50%' y='40' font-size='30' font-family='Arial,Helvetica,sans-serif' fill='#fff' dominant-baseline='middle' text-anchor='middle'>Footwear</text>
+</svg>

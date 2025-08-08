@@ -1,4 +1,4 @@
-/// <reference path="./types.d.ts" />
+// Clean implementation starts here
 import express from 'express';
 import cors from 'cors';
 import bcrypt from 'bcryptjs';
@@ -24,57 +24,69 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'dev_secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { httpOnly: true, sameSite: 'lax' }
+}));
+app.use(passport.initialize());
+app.use(passport.session());
 
-// Passport session setup
-passport.serializeUser((user: any, done: (err: any, id?: any) => void) => done(null, user.id));
-passport.deserializeUser(async (id: number, done: (err: any, user?: any) => void) => {
+// Minimal typed helpers
+type UserRow = { id: number; username: string; email: string; password: string | null };
+
+passport.serializeUser((user: any, done) => done(null, user.id));
+passport.deserializeUser(async (id: number, done) => {
   try {
-    const userRes = await pool.query('SELECT * FROM users WHERE id = $1', [id]);
-    done(null, userRes.rows[0]);
-  } catch (err) {
-    done(err);
-  }
+    const r = await pool.query('SELECT id, username, email FROM users WHERE id = $1', [id]);
+    done(null, r.rows[0]);
+  } catch (e) { done(e); }
 });
 
 passport.use(new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID || 'GOOGLE_CLIENT_ID',
   clientSecret: process.env.GOOGLE_CLIENT_SECRET || 'GOOGLE_CLIENT_SECRET',
-  callbackURL: process.env.GOOGLE_CALLBACK_URL || 'http://localhost:3001/api/auth/google/callback',
-}, async (accessToken: string, refreshToken: string, profile: any, done: (err: any, user?: any) => void) => {
+  callbackURL: process.env.GOOGLE_CALLBACK_URL || 'http://localhost:3001/api/auth/google/callback'
+}, async (_a, _r, profile, done) => {
   try {
     const googleId = profile.id;
     const email = profile.emails?.[0]?.value || '';
-    const username = profile.displayName || email;
-    let userRes = await pool.query('SELECT * FROM users WHERE google_id = $1', [googleId]);
-    let user = userRes.rows[0];
+    const username = profile.displayName || email || ('user_' + googleId.slice(0,6));
+    let u = await pool.query('SELECT * FROM users WHERE google_id = $1', [googleId]);
+    let user = u.rows[0];
     if (!user) {
-      userRes = await pool.query('INSERT INTO users (username, email, google_id, provider) VALUES ($1, $2, $3, $4) RETURNING *', [username, email, googleId, 'google']);
-      user = userRes.rows[0];
+      u = await pool.query('INSERT INTO users (username, email, google_id, provider) VALUES ($1,$2,$3,$4) RETURNING *', [username, email, googleId, 'google']);
+      user = u.rows[0];
     }
     done(null, user);
-  } catch (err) {
-    done(err);
-  }
+  } catch (e) { done(e as any); }
 }));
 
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'dev_secret',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    httpOnly: true,
-    sameSite: 'lax'
-  }
-}));
-app.use(passport.initialize());
-app.use(passport.session());
+// Simple: fixed images per product (served from frontend public/images). No dynamic logic.
+const PRODUCT_IMAGE_MAP: Record<string,string> = {
+  'Sony WH-1000XM5 Wireless Headphones': '/images/headphones.svg',
+  'Apple Watch Series 9': '/images/watch.svg',
+  'Keurig K-Classic Coffee Maker': '/images/coffee-maker.svg',
+  'Manduka PRO Yoga Mat': '/images/yoga-mat.svg',
+  'JBL Flip 6 Bluetooth Speaker': '/images/speaker.svg',
+  'Eco-Friendly Water Bottle': '/images/bottle.svg',
+  'Standing Desk': '/images/desk.svg',
+  'Nike Air Zoom Pegasus 40 Running Shoes': '/images/shoes.svg'
+};
+const DEFAULT_PRODUCT_IMAGE = '/images/product.svg';
+function imageForProductName(name: string) {
+  return PRODUCT_IMAGE_MAP[name] || DEFAULT_PRODUCT_IMAGE;
+}
 
 async function setupDatabase() {
   await pool.query(`CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     username TEXT UNIQUE NOT NULL,
     email TEXT UNIQUE NOT NULL,
-  password TEXT NOT NULL
+    password TEXT,
+    google_id TEXT,
+    provider TEXT DEFAULT 'local'
   );`);
   await pool.query(`CREATE TABLE IF NOT EXISTS products (
     id SERIAL PRIMARY KEY,
@@ -105,256 +117,190 @@ async function setupDatabase() {
     price REAL NOT NULL,
     deleted BOOLEAN DEFAULT FALSE
   );`);
-
-  // Add Google fields to users table
-  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id TEXT;
-  ALTER TABLE users ADD COLUMN IF NOT EXISTS provider TEXT DEFAULT 'local';`);
-
-  // Allow NULL password for OAuth users
-  await pool.query(`ALTER TABLE users ALTER COLUMN password DROP NOT NULL;`);
 }
 
-setupDatabase().catch((err) => {
-  console.error('Database setup failed:', err);
-  process.exit(1);
-});
+async function seedProducts() {
+  const products = [
+    { name: 'Sony WH-1000XM5 Wireless Headphones', description: 'Noise-cancelling over-ear headphones with 30h battery life.', price: 99.99, category: 'Electronics', stock: 50 },
+    { name: 'Apple Watch Series 9', description: 'Fitness tracking, heart rate monitor, notifications.', price: 149.99, category: 'Electronics', stock: 30 },
+    { name: 'Keurig K-Classic Coffee Maker', description: 'Programmable drip coffee maker.', price: 59.99, category: 'Home Appliances', stock: 20 },
+    { name: 'Manduka PRO Yoga Mat', description: 'Eco-friendly yoga mat.', price: 24.99, category: 'Fitness', stock: 100 },
+    { name: 'JBL Flip 6 Bluetooth Speaker', description: 'Portable speaker with deep bass.', price: 39.99, category: 'Electronics', stock: 40 },
+    { name: 'Eco-Friendly Water Bottle', description: 'Reusable stainless steel bottle.', price: 19.99, category: 'Fitness', stock: 80 },
+    { name: 'Standing Desk', description: 'Adjustable height desk.', price: 299.99, category: 'Furniture', stock: 15 },
+    { name: 'Nike Air Zoom Pegasus 40 Running Shoes', description: 'Lightweight running shoes.', price: 79.99, category: 'Footwear', stock: 60 }
+  ];
+  for (const p of products) {
+    const existing = await pool.query('SELECT id FROM products WHERE name = $1', [p.name]);
+    const image = imageForProductName(p.name);
+    if (existing.rows.length === 0) {
+      await pool.query('INSERT INTO products (name, description, price, image, category, stock) VALUES ($1,$2,$3,$4,$5,$6)', [p.name, p.description, p.price, image, p.category, p.stock]);
+    } else {
+      await pool.query('UPDATE products SET description=$2, price=$3, image=$4, category=$5, stock=$6 WHERE name=$1', [p.name, p.description, p.price, image, p.category, p.stock]);
+    }
+  }
+}
 
-// Registration endpoint
+// Auth & user routes
 app.post('/api/register', async (req, res) => {
   const { username, email, password } = req.body;
-  if (!username || !email || !password) {
-    return res.status(400).json({ error: 'All fields are required.' });
-  }
+  if (!username || !email || !password) return res.status(400).json({ error: 'All fields required' });
   try {
-    const hashedPassword = await bcrypt.hash(password, 10);
-    await pool.query('INSERT INTO users (username, email, password) VALUES ($1, $2, $3)', [username, email, hashedPassword]);
-    res.status(201).json({ message: 'User registered successfully.' });
-  } catch (err: any) {
-    if (err.code === '23505') {
-      res.status(409).json({ error: 'Username or email already exists.' });
-    } else {
-      res.status(500).json({ error: 'Registration failed.' });
-    }
+    const hash = await bcrypt.hash(password, 10);
+    await pool.query('INSERT INTO users (username, email, password) VALUES ($1,$2,$3)', [username, email, hash]);
+    res.status(201).json({ message: 'Registered' });
+  } catch (e: any) {
+    if (e.code === '23505') return res.status(409).json({ error: 'Username or email exists' });
+    res.status(500).json({ error: 'Registration failed' });
   }
 });
 
-// Login endpoint
 app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
-  if (!username || !password) {
-    return res.status(400).json({ error: 'Username and password required.' });
-  }
+  if (!username || !password) return res.status(400).json({ error: 'Username & password required' });
   try {
-    const userRes = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
-    if (userRes.rows.length === 0) {
-      return res.status(401).json({ error: 'Invalid username or password.' });
-    }
-    const user = userRes.rows[0];
-    const match = await bcrypt.compare(password, user.password);
-    if (!match) {
-      return res.status(401).json({ error: 'Invalid username or password.' });
-    }
-    res.json({ message: 'Login successful', user: { id: user.id, username: user.username, email: user.email } });
-  } catch (err) {
-    res.status(500).json({ error: 'Login failed.' });
+    const r = await pool.query('SELECT * FROM users WHERE username=$1', [username]);
+    if (!r.rows.length) return res.status(401).json({ error: 'Invalid credentials' });
+    const user: UserRow = r.rows[0];
+    if (!user.password) return res.status(401).json({ error: 'Account uses OAuth' });
+    const ok = await bcrypt.compare(password, user.password);
+    if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
+    res.json({ message: 'Login ok', user: { id: user.id, username: user.username, email: user.email } });
+  } catch {
+    res.status(500).json({ error: 'Login failed' });
   }
 });
 
-// Product listing endpoint
-app.get('/api/products', async (req, res) => {
-  const result = await pool.query('SELECT * FROM products');
-  res.json(result.rows);
+// Product routes
+app.get('/api/products', async (_req, res) => {
+  const r = await pool.query('SELECT * FROM products ORDER BY id');
+  res.json(r.rows);
 });
 
-// Create product endpoint
 app.post('/api/products', async (req, res) => {
-  const { name, description, price, image, category, stock } = req.body;
-  if (!name || !price) {
-    return res.status(400).json({ error: 'Name and price are required.' });
-  }
+  const { name, description, price, category, stock } = req.body;
+  if (!name || price == null) return res.status(400).json({ error: 'Name & price required' });
   try {
-    const result = await pool.query('INSERT INTO products (name, description, price, image, category, stock) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *', [name, description, price, image, category, stock || 0]);
-    res.status(201).json(result.rows[0]);
-  } catch (err) {
-    res.status(500).json({ error: 'Product creation failed.' });
-  }
+  const image = imageForProductName(name);
+    const r = await pool.query('INSERT INTO products (name, description, price, image, category, stock) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *', [name, description, price, image, category, stock || 0]);
+    res.status(201).json(r.rows[0]);
+  } catch { res.status(500).json({ error: 'Create failed' }); }
 });
 
-// Get single product
 app.get('/api/products/:id', async (req, res) => {
-  const { id } = req.params;
-  try {
-    const result = await pool.query('SELECT * FROM products WHERE id = $1', [id]);
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Product not found.' });
-    }
-    res.json(result.rows[0]);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch product.' });
-  }
+  const r = await pool.query('SELECT * FROM products WHERE id=$1', [req.params.id]);
+  if (!r.rows.length) return res.status(404).json({ error: 'Not found' });
+  res.json(r.rows[0]);
 });
 
-// Update product
 app.put('/api/products/:id', async (req, res) => {
-  const { id } = req.params;
-  const { name, description, price, image, category, stock } = req.body;
+  const { name, description, price, category, stock } = req.body;
   try {
-    const result = await pool.query('UPDATE products SET name = $1, description = $2, price = $3, image = $4, category = $5, stock = $6 WHERE id = $7 RETURNING *', [name, description, price, image, category, stock, id]);
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Product not found.' });
-    }
-    res.json(result.rows[0]);
-  } catch (err) {
-    res.status(500).json({ error: 'Product update failed.' });
-  }
+  const image = imageForProductName(name);
+  const r = await pool.query('UPDATE products SET name=$1, description=$2, price=$3, image=$4, category=$5, stock=$6 WHERE id=$7 RETURNING *', [name, description, price, image, category, stock, req.params.id]);
+    if (!r.rows.length) return res.status(404).json({ error: 'Not found' });
+    res.json(r.rows[0]);
+  } catch { res.status(500).json({ error: 'Update failed' }); }
 });
 
-// Delete product
 app.delete('/api/products/:id', async (req, res) => {
-  const { id } = req.params;
-  try {
-    const result = await pool.query('DELETE FROM products WHERE id = $1 RETURNING *', [id]);
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Product not found.' });
-    }
-    res.json({ message: 'Product deleted.' });
-  } catch (err) {
-    res.status(500).json({ error: 'Product deletion failed.' });
-  }
+  const r = await pool.query('DELETE FROM products WHERE id=$1 RETURNING id', [req.params.id]);
+  if (!r.rows.length) return res.status(404).json({ error: 'Not found' });
+  res.json({ message: 'Deleted' });
 });
 
-// Update username endpoint
+// User profile adjustments
 app.put('/api/users/username', async (req, res) => {
   const { oldUsername, newUsername } = req.body;
-  if (!oldUsername || !newUsername) {
-    return res.status(400).json({ error: 'Old and new username required.' });
-  }
+  if (!oldUsername || !newUsername) return res.status(400).json({ error: 'Both usernames required' });
   try {
-    const result = await pool.query('UPDATE users SET username = $1 WHERE username = $2', [newUsername, oldUsername]);
-    if (result.rowCount === 0) {
-      return res.status(404).json({ error: 'User not found.' });
-    }
-    res.json({ message: 'Username updated.' });
-  } catch (err: any) {
-    if (err.code === '23505') {
-      res.status(409).json({ error: 'Username already exists.' });
-    } else {
-      res.status(500).json({ error: 'Username update failed.' });
-    }
+    const r = await pool.query('UPDATE users SET username=$1 WHERE username=$2', [newUsername, oldUsername]);
+    if (!r.rowCount) return res.status(404).json({ error: 'User not found' });
+    res.json({ message: 'Updated' });
+  } catch (e: any) {
+    if (e.code === '23505') return res.status(409).json({ error: 'Username exists' });
+    res.status(500).json({ error: 'Update failed' });
   }
 });
 
-// Update password endpoint
 app.put('/api/users/password', async (req, res) => {
   const { username, oldPassword, newPassword } = req.body;
-  if (!username || !oldPassword || !newPassword) {
-    return res.status(400).json({ error: 'Username, old password, and new password required.' });
-  }
+  if (!username || !oldPassword || !newPassword) return res.status(400).json({ error: 'Missing fields' });
   try {
-    const userRes = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
-    if (userRes.rows.length === 0) {
-      return res.status(404).json({ error: 'User not found.' });
-    }
-    const user = userRes.rows[0];
-    const match = await bcrypt.compare(oldPassword, user.password);
-    if (!match) {
-      return res.status(401).json({ error: 'Old password incorrect.' });
-    }
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    await pool.query('UPDATE users SET password = $1 WHERE username = $2', [hashedPassword, username]);
-    res.json({ message: 'Password updated.' });
-  } catch (err) {
-    res.status(500).json({ error: 'Password update failed.' });
-  }
+    const r = await pool.query('SELECT * FROM users WHERE username=$1', [username]);
+    if (!r.rows.length) return res.status(404).json({ error: 'User not found' });
+    const user: UserRow = r.rows[0];
+    if (!user.password) return res.status(400).json({ error: 'OAuth account' });
+    const ok = await bcrypt.compare(oldPassword, user.password);
+    if (!ok) return res.status(401).json({ error: 'Old password wrong' });
+    const hash = await bcrypt.hash(newPassword, 10);
+    await pool.query('UPDATE users SET password=$1 WHERE id=$2', [hash, user.id]);
+    res.json({ message: 'Password updated' });
+  } catch { res.status(500).json({ error: 'Update failed' }); }
 });
 
-// Delete user endpoint (POST for frontend compatibility)
 app.post('/api/users/delete', async (req, res) => {
   const { username } = req.body;
-  if (!username) {
-    return res.status(400).json({ error: 'Username required.' });
-  }
-  try {
-    const result = await pool.query('DELETE FROM users WHERE username = $1', [username]);
-    if (result.rowCount === 0) {
-      return res.status(404).json({ error: 'User not found.' });
-    }
-    res.json({ message: 'Account deleted.' });
-  } catch (err) {
-    res.status(500).json({ error: 'Account deletion failed.' });
-  }
+  if (!username) return res.status(400).json({ error: 'Username required' });
+  const r = await pool.query('DELETE FROM users WHERE username=$1 RETURNING id', [username]);
+  if (!r.rows.length) return res.status(404).json({ error: 'User not found' });
+  res.json({ message: 'Deleted' });
 });
 
-// Checkout endpoint: mock payment and delivery
+// Orders
 app.post('/api/checkout', async (req, res) => {
   const { userId, items, address, paymentMethod, deliveryMethod } = req.body;
-  if (!userId || !Array.isArray(items) || items.length === 0 || !address || !paymentMethod || !deliveryMethod) {
-    return res.status(400).json({ error: 'Missing required fields.' });
-  }
+  if (!userId || !Array.isArray(items) || !items.length) return res.status(400).json({ error: 'Missing fields' });
   try {
-    const paymentStatus = 'paid';
-    const deliveryStatus = 'processing';
-    const total = items.reduce((sum: number, item: any) => sum + item.price * item.qty, 0);
-    const orderRes = await pool.query('INSERT INTO orders (user_id, total, payment_status, delivery_status, address, payment_method, delivery_method) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, created_at', [userId, total, paymentStatus, deliveryStatus, address, paymentMethod, deliveryMethod]);
-    const orderId = orderRes.rows[0].id;
-    for (const item of items) {
-      await pool.query('INSERT INTO order_products (order_id, product_id, quantity, price) VALUES ($1, $2, $3, $4)', [orderId, item.id, item.qty, item.price]);
+    const total = items.reduce((s: number, it: any) => s + (it.price * it.qty), 0);
+    const pay = 'paid';
+    const del = 'processing';
+    const o = await pool.query('INSERT INTO orders (user_id,total,payment_status,delivery_status,address,payment_method,delivery_method) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id, created_at', [userId, total, pay, del, address, paymentMethod, deliveryMethod]);
+    const orderId = o.rows[0].id;
+    for (const it of items) {
+      await pool.query('INSERT INTO order_products (order_id, product_id, quantity, price) VALUES ($1,$2,$3,$4)', [orderId, it.id, it.qty, it.price]);
     }
-    res.status(201).json({ orderId, created_at: orderRes.rows[0].created_at, total, paymentStatus, deliveryStatus });
-  } catch (err) {
-    res.status(500).json({ error: 'Checkout failed.' });
-  }
+    res.status(201).json({ orderId, total, paymentStatus: pay, deliveryStatus: del });
+  } catch { res.status(500).json({ error: 'Checkout failed' }); }
 });
 
-// Delete order endpoint (soft delete)
 app.delete('/api/orders/:orderId', async (req, res) => {
   const { orderId } = req.params;
-  try {
-    await pool.query('UPDATE order_products SET deleted = TRUE WHERE order_id = $1', [orderId]);
-    const result = await pool.query('UPDATE orders SET deleted = TRUE WHERE id = $1 RETURNING *', [orderId]);
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Order not found.' });
-    }
-    res.json({ message: 'Order deleted.' });
-  } catch (err: any) {
-    res.status(500).json({ error: 'Order deletion failed.', details: err.message });
-  }
+  // Soft delete: mark deleted flags
+  await pool.query('UPDATE order_products SET deleted=TRUE WHERE order_id=$1', [orderId]);
+  const r = await pool.query('UPDATE orders SET deleted=TRUE WHERE id=$1 RETURNING id', [orderId]);
+  if (!r.rows.length) return res.status(404).json({ error: 'Order not found' });
+  res.json({ message: 'Deleted' });
 });
 
-// Get user orders (with payment/delivery details)
 app.get('/api/orders/:userId', async (req, res) => {
-  const { userId } = req.params;
   try {
-    const ordersRes = await pool.query('SELECT * FROM orders WHERE user_id = $1 AND deleted = FALSE ORDER BY created_at DESC', [userId]);
-    const orders = ordersRes.rows;
-    for (const order of orders) {
-      const itemsRes = await pool.query('SELECT * FROM order_products WHERE order_id = $1 AND deleted = FALSE', [order.id]);
-      order.items = itemsRes.rows;
+    const r = await pool.query('SELECT * FROM orders WHERE user_id=$1 AND deleted=FALSE ORDER BY created_at DESC', [req.params.userId]);
+    const orders = r.rows;
+    for (const o of orders) {
+      const it = await pool.query('SELECT * FROM order_products WHERE order_id=$1 AND deleted=FALSE', [o.id]);
+      o.items = it.rows;
     }
     res.json(orders);
-  } catch (err: any) {
-    res.status(500).json({ error: 'Failed to fetch orders.', details: err.message });
-  }
+  } catch { res.status(500).json({ error: 'Fetch failed' }); }
 });
 
-// Google OAuth routes
-app.get('/api/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
-app.get('/api/auth/google/callback', passport.authenticate('google', { failureRedirect: '/login', session: true }), (req, res) => {
-  // Redirect to frontend with user info
+// OAuth
+app.get('/api/auth/google', passport.authenticate('google', { scope: ['profile','email'] }));
+app.get('/api/auth/google/callback', passport.authenticate('google', { failureRedirect: '/login', session: true }), (_req, res) => {
   res.redirect('http://localhost:5173/?googleLogin=success');
 });
 
 app.get('/api/auth/user', (req, res) => {
   if (req.isAuthenticated && req.isAuthenticated()) {
     const u: any = req.user;
-    res.json({ user: { id: u.id, username: u.username, email: u.email } });
-  } else {
-    res.status(401).json({ error: 'Not authenticated' });
+    return res.json({ user: { id: u.id, username: u.username, email: u.email } });
   }
+  res.status(401).json({ error: 'Not authenticated' });
 });
 
 app.post('/api/auth/logout', (req, res) => {
-  // @ts-ignore - passport adds logout to req
+  // @ts-ignore
   req.logout?.((err: any) => {
     if (err) return res.status(500).json({ error: 'Logout failed' });
     req.session?.destroy(() => {
@@ -364,7 +310,19 @@ app.post('/api/auth/logout', (req, res) => {
   });
 });
 
-const port = Number(process.env.PORT || 3001);
-app.listen(port, () => {
-  console.log('Backend running at http://localhost:' + port);
-});
+// Boot
+(async () => {
+  try {
+    await setupDatabase();
+    await seedProducts();
+    const port = Number(process.env.PORT || 3001);
+    app.listen(port, () => {
+      console.log('Backend running at http://localhost:' + port);
+    });
+  } catch (e) {
+    console.error('Startup failed', e);
+    process.exit(1);
+  }
+})();
+
+

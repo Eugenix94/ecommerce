@@ -1,0 +1,7 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='300' height='200'>
+<rect width='300' height='200' fill='#fb8c00'/>
+<rect x='90' y='40' width='120' height='120' rx='10' ry='10' fill='none' stroke='#fff' stroke-width='6'/>
+<circle cx='150' cy='90' r='18' fill='none' stroke='#fff' stroke-width='6'/>
+<line x1='150' y1='108' x2='150' y2='140' stroke='#fff' stroke-width='6'/>
+<text x='50%' y='185' font-size='26' font-family='Arial,Helvetica,sans-serif' fill='#fff' dominant-baseline='middle' text-anchor='middle'>Appliances</text>
+</svg>
