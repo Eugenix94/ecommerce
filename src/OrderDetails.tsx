@@ -1,4 +1,4 @@
-import React from 'react';
+// ...existing code...
 
 const productNames: { [key: number]: string } = {
   1: 'Eco-Friendly Water Bottle',

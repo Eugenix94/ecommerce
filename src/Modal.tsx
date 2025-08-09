@@ -1,4 +1,4 @@
-import { useState } from 'react';
+// ...existing code...
 
 export default function Modal({ children, open, onClose }: any) {
   if (!open) return null;

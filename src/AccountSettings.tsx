@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 
 type AccountSettingsProps = {
   user: { id: number; username: string; email: string };
@@ -13,10 +13,10 @@ export default function AccountSettings({ user, onUsernameUpdate, onLogout }: Ac
   const [msg, setMsg] = useState('');
 
   // Update username
-  const handleUsernameChange = (e) => {
+  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setUsernameForm({ ...usernameForm, [e.target.name]: e.target.value });
   };
-  const handleUsernameUpdate = async (e) => {
+  const handleUsernameUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setMsg('');
     const res = await fetch('http://localhost:3001/api/users/username', {
@@ -34,10 +34,10 @@ export default function AccountSettings({ user, onUsernameUpdate, onLogout }: Ac
   };
 
   // Update password
-  const handlePasswordChange = (e) => {
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPasswordForm({ ...passwordForm, [e.target.name]: e.target.value });
   };
-  const handlePasswordUpdate = async (e) => {
+  const handlePasswordUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setMsg('');
     const res = await fetch('http://localhost:3001/api/users/password', {
@@ -54,10 +54,10 @@ export default function AccountSettings({ user, onUsernameUpdate, onLogout }: Ac
   };
 
   // Delete account
-  const handleDeleteChange = (e) => {
+  const handleDeleteChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setDeleteForm({ ...deleteForm, [e.target.name]: e.target.value });
   };
-  const handleDelete = async (e) => {
+  const handleDelete = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setMsg('');
     const res = await fetch('http://localhost:3001/api/users/delete', {
