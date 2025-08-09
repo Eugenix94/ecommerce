@@ -46,6 +46,8 @@ import path from 'path';
 app.use('/images', express.static(path.join(process.cwd(), '../public/images')));
 // Health check endpoint for Render
 app.get('/healthz', (_req, res) => res.send('ok'));
+// Root route for friendly message
+app.get('/', (_req, res) => res.send('Backend API is running'));
 app.use(express.json());
 app.use(session({
   secret: process.env.SESSION_SECRET || 'dev_secret',
