@@ -1,4 +1,4 @@
-import React from 'react';
+// ...existing code...
 
 export default function ProductDetails({ product, onClose, onAddToCart }: { product: any, onClose: () => void, onAddToCart: (product: any) => void }) {
   if (!product) return null;
