@@ -29,6 +29,7 @@ for (const key of requiredEnv) {
 
 const pool = new Pool({
   user: process.env.PGUSER || 'postgres',
+  host: process.env.PGHOST || 'localhost',
   database: process.env.PGDATABASE || 'ecommerce',
   password: process.env.PGPASSWORD || 'dogfood',
   port: Number(process.env.PGPORT || 5432)
