@@ -1,3 +1,4 @@
+import { API_BASE_URL } from './api';
 import { useEffect, useState } from 'react';
 
 type User = {
@@ -51,7 +52,7 @@ export default function App() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('googleLogin') === 'success' && !user) {
-      fetch('http://localhost:3001/api/auth/user', { credentials: 'include' })
+  fetch(`${API_BASE_URL}/api/auth/user`, { credentials: 'include' })
         .then(res => res.ok ? res.json() : Promise.reject())
         .then(data => {
           if (data.user) {
@@ -76,7 +77,7 @@ export default function App() {
   };
   const handleLogout = () => {
     // Call backend to clear session (for OAuth users)
-    fetch('http://localhost:3001/api/auth/logout', { method: 'POST', credentials: 'include' })
+  fetch(`${API_BASE_URL}/api/auth/logout`, { method: 'POST', credentials: 'include' })
       .finally(() => {
         setUser(null);
         localStorage.removeItem('user');

@@ -1,3 +1,4 @@
+import { API_BASE_URL } from './api';
 import { useEffect, useState } from 'react';
 import ProductDetails from './ProductDetails';
 import { productImage } from './imagePlaceholders';
@@ -15,7 +16,7 @@ export default function ProductsList({ onAddToCart, user }: ProductsListProps) {
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
 
   useEffect(() => {
-    fetch('http://localhost:3001/api/products', { credentials: 'include' })
+  fetch(`${API_BASE_URL}/api/products`, { credentials: 'include' })
       .then(res => res.json())
       .then(data => {
         setProducts(data);

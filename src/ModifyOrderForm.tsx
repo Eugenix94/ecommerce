@@ -1,3 +1,4 @@
+import { API_BASE_URL } from './api';
 import { useState } from 'react';
 
 export default function ModifyOrderForm({ order, onModified, onDeleted }: any) {
@@ -17,7 +18,7 @@ export default function ModifyOrderForm({ order, onModified, onDeleted }: any) {
         setLoading(false);
         return;
       }
-      const res = await fetch(`http://localhost:3001/api/orders/${order.id}`, {
+  const res = await fetch(`${API_BASE_URL}/api/orders/${order.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -52,7 +53,7 @@ export default function ModifyOrderForm({ order, onModified, onDeleted }: any) {
         setLoading(false);
         return;
       }
-      const res = await fetch(`http://localhost:3001/api/admin/orders/${order.id}`, { method: 'DELETE' });
+  const res = await fetch(`${API_BASE_URL}/api/admin/orders/${order.id}`, { method: 'DELETE' });
       if (!res.ok) {
         const err = await res.json();
         setError(err.error || 'Delete failed.');

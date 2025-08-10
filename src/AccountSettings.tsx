@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_BASE_URL } from './api';
 
 type AccountSettingsProps = {
   user: { id: number; username: string; email: string };
@@ -19,7 +20,7 @@ export default function AccountSettings({ user, onUsernameUpdate, onLogout }: Ac
   const handleUsernameUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setMsg('');
-    const res = await fetch('http://localhost:3001/api/users/username', {
+  const res = await fetch(`${API_BASE_URL}/api/users/username`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(usernameForm)
@@ -40,7 +41,7 @@ export default function AccountSettings({ user, onUsernameUpdate, onLogout }: Ac
   const handlePasswordUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setMsg('');
-    const res = await fetch('http://localhost:3001/api/users/password', {
+  const res = await fetch(`${API_BASE_URL}/api/users/password`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(passwordForm)
@@ -60,7 +61,7 @@ export default function AccountSettings({ user, onUsernameUpdate, onLogout }: Ac
   const handleDelete = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setMsg('');
-    const res = await fetch('http://localhost:3001/api/users/delete', {
+  const res = await fetch(`${API_BASE_URL}/api/users/delete`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(deleteForm)

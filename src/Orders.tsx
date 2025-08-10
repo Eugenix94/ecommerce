@@ -1,3 +1,4 @@
+import { API_BASE_URL } from './api';
 import { useEffect, useState } from 'react';
 import ModifyOrderForm from './ModifyOrderForm';
 import Modal from './Modal';
@@ -25,7 +26,7 @@ export default function Orders({ user }: OrdersProps) {
 
   useEffect(() => {
     if (!user) return;
-  fetch(`http://localhost:3001/api/orders/${user.id}`, { credentials: 'include' })
+  fetch(`${API_BASE_URL}/api/orders/${user.id}`, { credentials: 'include' })
       .then(res => res.json())
       .then(data => {
         setOrders(data);
@@ -63,7 +64,7 @@ export default function Orders({ user }: OrdersProps) {
           <ModifyOrderForm order={selectedOrder} onModified={async () => {
             setModalOpen(false);
             setLoading(true);
-            const refreshed = await fetch(`http://localhost:3001/api/orders/${user.id}`, { credentials: 'include' });
+            const refreshed = await fetch(`${API_BASE_URL}/api/orders/${user.id}`, { credentials: 'include' });
             const data = await refreshed.json();
             setOrders(data);
             setLoading(false);

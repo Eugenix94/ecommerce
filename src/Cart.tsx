@@ -1,3 +1,4 @@
+import { API_BASE_URL } from './api';
 import { useState } from 'react';
 
 type CartProps = {
@@ -28,7 +29,7 @@ export default function Cart({ cart, onCheckout, onRemove, user }: CartProps) {
     e.preventDefault();
     setMsg('');
     try {
-      const res = await fetch('http://localhost:3001/api/checkout', {
+  const res = await fetch(`${API_BASE_URL}/api/checkout`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
