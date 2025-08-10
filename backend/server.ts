@@ -302,10 +302,15 @@ app.get('/api/orders/:userId', async (req, res) => {
   try {
     const r = await pool.query('SELECT * FROM orders WHERE user_id=$1 AND deleted=FALSE ORDER BY created_at DESC', [req.params.userId]);
     const orders = r.rows;
-    for (const o of orders) {
-      const it = await pool.query('SELECT * FROM order_products WHERE order_id=$1 AND deleted=FALSE', [o.id]);
-      o.items = it.rows;
-    }
+      for (const o of orders) {
+        const it = await pool.query(`
+          SELECT op.*, p.name AS product_name
+          FROM order_products op
+          JOIN products p ON op.product_id = p.id
+          WHERE op.order_id = $1 AND op.deleted = FALSE
+        `, [o.id]);
+        o.items = it.rows;
+      }
     res.json(orders);
   } catch { res.status(500).json({ error: 'Fetch failed' }); }
 });
